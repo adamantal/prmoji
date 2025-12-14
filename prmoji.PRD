@@ -1,0 +1,165 @@
+# PRmoji — Product Requirements Document
+
+## Summary
+PRmoji is a tiny webhook-driven service that **adds emoji reactions to Slack messages containing GitHub Pull Request URLs** as the PR receives reviews/comments and eventually merges/closes. It also supports an **optional “merge notification”** message to a dedicated Slack channel when a merged PR matches specific repo + label criteria.
+
+The system is implemented as a Go service exposing endpoints for **Slack Events** and **GitHub Webhooks**, backed by a **SQLite** table that maps a PR URL to the Slack message (channel + timestamp) where it was posted.
+
+## Problem / Motivation
+Teams often share PR links in Slack. Review progress then happens in GitHub, leaving Slack readers without an at-a-glance status. PRmoji reduces context switching by reflecting key PR lifecycle events directly on the Slack message via emoji reactions.
+
+## Goals
+- **Automatically detect PR links** posted in Slack channels where the PRmoji bot is present.
+- **Persist a mapping** from PR URL → Slack message (channel, timestamp).
+- On GitHub PR activity, **lookup related Slack messages** and **add a corresponding emoji reaction**.
+- **Remove stale mappings** when PRs are merged/closed, and via a cleanup endpoint for old rows.
+- Optionally, for specific repos/labels, **post a merge notification** to a dedicated channel.
+
+## Non-goals / Out of scope
+- No UI (no web dashboard, no Slack home tab, no admin panel).
+- No per-workspace / per-channel configuration UI.
+- No authentication/verification of Slack or GitHub webhook signatures (not implemented).
+- No deduplication across multiple Slack messages referencing the same PR beyond “all stored messages will be reacted to”.
+- No handling of non-`github.com/.../pull/<number>` URL variants (e.g. enterprise domains, query strings, short links).
+
+## Users / Personas
+- **Slack channel participants**: post PR links and want status feedback in-channel.
+- **Reviewers**: want approval/changes feedback visible in Slack without opening GitHub.
+- **DevOps/maintainer**: configures Slack app + GitHub webhooks + DB; monitors uptime/logs.
+
+## Primary user stories
+- As a developer, when I paste a GitHub PR link into a Slack channel, PRmoji should remember that message.
+- As a developer, when someone approves/requests changes/comments on that PR in GitHub, PRmoji should add a relevant emoji reaction to my Slack message.
+- As a developer, when the PR is merged or closed, PRmoji should reflect that with a reaction and stop tracking it.
+
+## Functional requirements
+
+### FR1 — Slack message ingestion
+- The system must accept Slack Events API callbacks at `POST /event/slack`.
+- The system must handle Slack URL verification by echoing `body.challenge` when present.
+- For non-challenge requests, the system must parse the Slack event payload and extract:
+  - `text` (message text)
+  - `channel` (Slack channel ID)
+  - `event_ts` (message timestamp used by Slack reactions API)
+- If any of these fields are missing, the message is discarded.
+- The system must find **all** PR URLs in `text` using the regex:
+  - `https://github.com/<owner>/<repo>/pull/<number>`
+- For each PR URL found, the system must store `(pr_url, message_channel, message_timestamp)` in SQLite.
+
+### FR2 — GitHub event ingestion and action classification
+- The system must accept GitHub webhook callbacks at `POST /event/github`.
+- The system must classify incoming events into a single “PR action” based on:
+  - HTTP header `x-github-event`
+  - JSON body fields
+- Supported actions and classification logic:
+  - **commented**
+    - `issue_comment` where `body.action === "created"`, OR
+    - `pull_request_review` where `body.action === "submitted"` and `review.state === "commented"`
+  - **approved**
+    - `pull_request_review` where `body.action === "submitted"` and `review.state === "approved"`
+  - **changes_requested**
+    - `pull_request_review` where `body.action === "submitted"` and `review.state === "changes_requested"`
+  - **merged**
+    - `pull_request` where `body.action === "closed"` and `pull_request.merged === true`
+  - **closed**
+    - `pull_request` where `body.action === "closed"` and `pull_request.merged === false`
+- The PR URL must be derived from:
+  - `body.pull_request.html_url` when present, else
+  - `body.issue.pull_request.html_url` for issue_comment events.
+- If either `url` or `action` cannot be derived, the event is discarded.
+
+### FR3 — Emoji reaction mapping
+- For each GitHub PR event that maps to a supported action, the system must add the following Slack emoji reaction to each matching stored Slack message:
+  - `commented` → `speech_balloon`
+  - `approved` → `white_check_mark`
+  - `changes_requested` → `no_entry`
+  - `merged` → `pr-merged` *(custom emoji may be required in the workspace)*
+  - `closed` → `wastebasket`
+
+### FR4 — Reaction suppression rules (anti-noise)
+For action `commented`, PRmoji must **not** add reactions when:
+- The commenter is one of a list of ignored commenters
+
+### FR5 — Storage lifecycle
+- When reacting to a PR event, the system must fetch all stored Slack messages for `pr_url`.
+- For actions `merged` and `closed`, after processing reactions, the system must delete all stored entries for that `pr_url`.
+- For other actions, entries remain.
+- The service should run a cleanup job to delete entries older than 3 months (configurable).
+
+### FR6 — Cleanup endpoint
+- The system must expose `POST /cleanup/` to delete rows older than N days (default **90**).
+- Rows are deleted where `inserted_at < (today - N days)` (date-only threshold).
+- Success returns HTTP 200 `OK`; failure returns HTTP 500.
+
+### FR7 — Healthcheck
+- The system must expose `GET /healthz` returning `OK` to support uptime checks.
+
+## Data model
+SQLite table: `pr_messages`
+- `id` (sequence-backed primary key)
+- `inserted_at` (timestamp, default now)
+- `pr_url` (varchar, not null) — GitHub PR URL
+- `message_channel` (varchar) — Slack channel ID
+- `message_timestamp` (varchar) — Slack message timestamp (`event_ts`)
+
+## External integrations
+
+### Slack
+- Slack App uses Event Subscriptions:
+  - Request URL: `/event/slack`
+  - Bot events: `message.channels`, `message.groups`
+- Bot must be invited to channels where it should listen.
+- Slack Web API token (`SLACK_TOKEN`) must allow:
+  - Adding reactions (`reactions.add`)
+
+### GitHub
+- GitHub webhooks must POST to `/event/github` with content type `application/json`.
+- Required event types (as configured in README):
+  - Issue comments
+  - Pull requests
+  - Pull request reviews
+  - Pull request review comments *(configured; not currently mapped to an action in code)*
+
+## Service interfaces (HTTP)
+- `GET /` → `OK`
+- `POST /event/slack`
+  - If `body.challenge` exists: respond with that challenge string.
+  - Else respond `OK` and process event asynchronously.
+- `POST /event/github`
+  - Respond `OK` immediately and process asynchronously.
+- `POST /cleanup/`
+  - Respond `OK` if cleanup succeeded; else 500.
+
+## Configuration / Environment variables
+- **Required**
+  - `SLACK_TOKEN`: Slack bot token for Web API calls.
+- **Optional**
+  - `PORT`: HTTP listen port (default 5000).
+  - `LOG_LEVEL`: log level (default `info`).
+  - `SENTRY_DSN`: Sentry DSN for error reporting.
+
+## Non-functional requirements
+- **Reliability**: webhook endpoints must respond quickly (current behavior responds `OK` before async processing).
+- **Observability**:
+  - Configurable log levels.
+  - Errors can be captured by Sentry.
+- **Data retention**:
+  - Entries deleted on merge/close.
+  - Periodic cleanup supports deletion of rows older than 90 days (configurable by code call).
+
+## Acceptance criteria (black-box)
+- When a Slack message contains one or more PR URLs, each URL is stored with the message’s channel and timestamp.
+- When a GitHub “approved” review arrives for a stored PR URL, PRmoji adds `:white_check_mark:` to the Slack message.
+- When a GitHub “changes requested” review arrives, PRmoji adds `:no_entry:`.
+- When a GitHub comment event arrives, PRmoji adds `:speech_balloon:` **unless** suppressed by the anti-noise rules.
+- When the PR is merged, PRmoji adds `:pr-merged:` to the Slack message(s) and then deletes the stored mapping(s).
+- When the PR is closed without merging, PRmoji adds `:wastebasket:` and deletes the stored mapping(s).
+- `POST /cleanup/` deletes entries older than 90 days and returns `OK` on success.
+- `GET /` returns `OK`.
+
+## Future enhancements (not implemented)
+- Configurable watched repositories/labels via env vars or admin command.
+- Support GitHub Enterprise domains in PR URL detection.
+- Signature verification for Slack/GitHub webhook authenticity.
+- Parameterize cleanup window via request body or query string.
+- De-duplication and idempotency (avoid adding the same reaction repeatedly).
