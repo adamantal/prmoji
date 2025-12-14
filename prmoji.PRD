@@ -136,7 +136,6 @@ SQLite table: `pr_messages`
 - **Optional**
   - `PORT`: HTTP listen port (default 5000).
   - `LOG_LEVEL`: log level (default `info`).
-  - `SENTRY_DSN`: Sentry DSN for error reporting.
 
 ## Non-functional requirements
 - **Reliability**: webhook endpoints must respond quickly (current behavior responds `OK` before async processing).

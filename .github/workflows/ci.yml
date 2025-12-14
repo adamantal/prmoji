@@ -34,6 +34,41 @@ jobs:
       - name: Run tests
         run: go test ./...
 
+  helm-lint:
+    name: Helm lint (charts/)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect chart changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          changed="$(git diff --name-only "${base}" "${head}" -- charts/ || true)"
+          if [[ -n "${changed}" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changed files:"
+            echo "${changed}"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes under charts/; skipping helm lint."
+          fi
+
+      - name: Set up Helm
+        if: steps.changes.outputs.changed == 'true'
+        uses: azure/setup-helm@v4
+
+      - name: Helm lint
+        if: steps.changes.outputs.changed == 'true'
+        run: helm lint charts/prmoji --set secret.existingSecret=dummy
+
   container-build:
     name: Build container image
     runs-on: ubuntu-latest

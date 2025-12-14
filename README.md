@@ -40,7 +40,6 @@ Environment variables:
   - `DB_PATH`: path to SQLite database file (default `./prmoji.db`)
   - `RETENTION_DAYS`: delete mappings older than N days (default `90`)
   - `IGNORED_COMMENTERS`: comma-separated GitHub usernames to suppress *comment* reactions for (default empty)
-  - `SENTRY_DSN`: Sentry DSN for error reporting (optional)
 
 ## Run
 
