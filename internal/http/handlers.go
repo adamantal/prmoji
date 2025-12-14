@@ -160,7 +160,7 @@ func (h *Handlers) handleCleanup(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := cleanup.Run(ctx, h.Store, 90, time.Now())
+	_, err := cleanup.Run(ctx, h.Store, h.Cfg.RetentionDays, time.Now())
 	if err != nil {
 		h.Log.Error("cleanup failed", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -12,49 +12,40 @@ A tiny web service that adds emoji reactions to Slack messages when the GitHub P
    - PR URL → (Slack channel ID, Slack message timestamp)
 3. When GitHub sends webhook events for that PR, `prmoji` looks up the stored Slack message(s) and adds a matching emoji reaction.
 
-## Emoji mapping
+## Deploying (Kubernetes)
 
-- **commented** → `speech_balloon`
-- **approved** → `white_check_mark`
-- **changes requested** → `no_entry`
-- **merged** → `pr-merged` *(custom emoji may be required in your Slack workspace)*
-- **closed (not merged)** → `wastebasket`
+The recommended way to deploy `prmoji` to Kubernetes is via the **Helm chart**.
 
-## Endpoints
-
-- `GET /` → `OK`
-- `GET /healthz` → `OK`
-- `POST /event/slack` → Slack Events API callback (also handles Slack URL verification challenges)
-- `POST /event/github` → GitHub webhook callback
-- `POST /cleanup/` → deletes old rows (also runs automatically once per day)
-
-## Configuration
-
-Environment variables:
-
-- **Required**
-  - `SLACK_TOKEN`: Slack bot token used for Slack Web API calls (`reactions.add`)
-- **Optional**
-  - `PORT`: HTTP listen port (default `5000`)
-  - `LOG_LEVEL`: log level (default `info`)
-  - `DB_PATH`: path to SQLite database file (default `./prmoji.db`)
-  - `RETENTION_DAYS`: delete mappings older than N days (default `90`)
-  - `IGNORED_COMMENTERS`: comma-separated GitHub usernames to suppress *comment* reactions for (default empty)
-  - `SENTRY_DSN`: Sentry DSN for error reporting (optional)
-
-## Run
-
-Build:
+1) Create a Secret (must contain `SLACK_TOKEN`):
 
 ```bash
-go build ./cmd/prmoji
+kubectl create namespace prmoji
+kubectl -n prmoji create secret generic prmoji-secrets \
+  --from-literal=SLACK_TOKEN='xoxb-...'
 ```
 
-Run:
+2) Install the chart (OCI on GHCR):
 
 ```bash
-SLACK_TOKEN='xoxb-...' ./prmoji
+helm upgrade --install prmoji oci://ghcr.io/adamantal/charts/prmoji \
+  --namespace prmoji \
+  --set secret.existingSecret=prmoji-secrets
 ```
+
+Notes:
+
+- **Persistence**: enabled by default (a PVC is created and mounted). The SQLite DB file is stored at `/data/prmoji.db`.
+- **Ingress**: enable and configure host(s) via chart values:
+
+```bash
+helm upgrade --install prmoji oci://ghcr.io/adamantal/charts/prmoji \
+  --namespace prmoji \
+  --set secret.existingSecret=prmoji-secrets \
+  --set ingress.enabled=true \
+  --set ingress.hosts[0].host=prmoji.example.com
+```
+
+- **Cleanup Job**: the chart includes a suspended Job you can manually unsuspend to trigger `POST /cleanup/`.
 
 ## Setup
 
@@ -93,6 +84,51 @@ This has to be done for every repository you want to watch.
   - **Pull request reviews**
   - *(Optional)* **Pull request review comments**
 - Click **Add webhook**
+
+## Configuration
+
+Environment variables:
+
+- **Required**
+  - `SLACK_TOKEN`: Slack bot token used for Slack Web API calls (`reactions.add`)
+- **Optional**
+  - `PORT`: HTTP listen port (default `5000`)
+  - `LOG_LEVEL`: log level (default `info`)
+  - `DB_PATH`: path to SQLite database file (default `./prmoji.db`)
+  - `RETENTION_DAYS`: delete mappings older than N days (default `90`)
+  - `IGNORED_COMMENTERS`: comma-separated GitHub usernames to suppress *comment* reactions for (default empty)
+
+## Run locally
+
+Build:
+
+```bash
+go build ./cmd/prmoji
+```
+
+Run:
+
+```bash
+SLACK_TOKEN='xoxb-...' ./prmoji
+```
+
+## Other
+
+### Emoji mapping
+
+- **commented** → `speech_balloon`
+- **approved** → `white_check_mark`
+- **changes requested** → `no_entry`
+- **merged** → `pr-merged` *(custom emoji may be required in your Slack workspace)*
+- **closed (not merged)** → `wastebasket`
+
+### Endpoints
+
+- `GET /` → `OK`
+- `GET /healthz` → `OK`
+- `POST /event/slack` → Slack Events API callback (also handles Slack URL verification challenges)
+- `POST /event/github` → GitHub webhook callback
+- `POST /cleanup/` → deletes old rows (also runs automatically once per day)
 
 ## Notes / limitations
 

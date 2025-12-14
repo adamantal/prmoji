@@ -12,7 +12,6 @@ type Config struct {
 	SlackToken        string
 	Port              int
 	LogLevel          string
-	SentryDSN         string
 	IgnoredCommenters []string
 	RetentionDays     int
 	DBPath            string
@@ -33,7 +32,6 @@ func Load() (Config, error) {
 		SlackToken:    v.GetString("SLACK_TOKEN"),
 		Port:          v.GetInt("PORT"),
 		LogLevel:      v.GetString("LOG_LEVEL"),
-		SentryDSN:     v.GetString("SENTRY_DSN"),
 		RetentionDays: v.GetInt("RETENTION_DAYS"),
 		DBPath:        v.GetString("DB_PATH"),
 	}

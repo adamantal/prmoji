@@ -1,0 +1,34 @@
+{{- if .Values.cleanupJob.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "prmoji.fullname" . }}-cleanup
+  labels:
+    {{- include "prmoji.labels" . | nindent 4 }}
+spec:
+  suspend: {{ .Values.cleanupJob.suspend }}
+  backoffLimit: {{ .Values.cleanupJob.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.cleanupJob.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "prmoji.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: cleanup
+          image: {{ printf "%s:%s" .Values.cleanupJob.image.repository .Values.cleanupJob.image.tag | quote }}
+          imagePullPolicy: {{ .Values.cleanupJob.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              set -eu;
+              url="";
+              {{- if and .Values.cleanupJob.useIngress .Values.ingress.enabled (gt (len .Values.ingress.hosts) 0) }}
+              url="https://{{ (index .Values.ingress.hosts 0).host }}/cleanup/";
+              {{- else }}
+              url="http://{{ include "prmoji.fullname" . }}:{{ .Values.service.port }}/cleanup/";
+              {{- end }}
+              echo "POST ${url}";
+              curl -fsS -X POST "${url}" {{- range .Values.cleanupJob.extraArgs }} {{ . | quote }}{{- end }}
+{{- end }}

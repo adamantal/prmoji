@@ -1,0 +1,81 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/adamantal/prmoji
+  tag: ""
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+
+autoscaling:
+  enabled: false
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: prmoji.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+persistence:
+  enabled: true
+  # If enabled, a PVC is created and mounted at mountPath.
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+  storageClassName: ""
+  mountPath: /data
+
+config:
+  port: 5000
+  logLevel: info
+  retentionDays: 90
+  ignoredCommenters: ""
+
+secret:
+  # Name of an existing Secret that must contain:
+  # - SLACK_TOKEN (required by the app)
+  existingSecret: ""
+
+cleanupJob:
+  enabled: true
+  suspend: true
+  image:
+    repository: curlimages/curl
+    tag: "8.12.1"
+    pullPolicy: IfNotPresent
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 300
+  # If true, job will call the public ingress host; otherwise it uses the in-cluster service.
+  useIngress: false
+  extraArgs: []
