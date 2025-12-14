@@ -141,7 +141,6 @@ SQLite table: `pr_messages`
 - **Reliability**: webhook endpoints must respond quickly (current behavior responds `OK` before async processing).
 - **Observability**:
   - Configurable log levels.
-  - Errors can be captured by Sentry.
 - **Data retention**:
   - Entries deleted on merge/close.
   - Periodic cleanup supports deletion of rows older than 90 days (configurable by code call).
