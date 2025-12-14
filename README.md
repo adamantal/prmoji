@@ -21,8 +21,7 @@ The recommended way to deploy `prmoji` to Kubernetes is via the **Helm chart**.
 ```bash
 kubectl create namespace prmoji
 kubectl -n prmoji create secret generic prmoji-secrets \
-  --from-literal=SLACK_TOKEN='xoxb-...' \
-  --from-literal=SENTRY_DSN=''
+  --from-literal=SLACK_TOKEN='xoxb-...'
 ```
 
 2) Install the chart (OCI on GHCR):
