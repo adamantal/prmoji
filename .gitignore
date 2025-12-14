@@ -7,6 +7,7 @@
 *.dll
 *.so
 *.dylib
+main
 
 # Test binary, built with `go test -c`
 *.test
@@ -26,6 +27,9 @@ go.work.sum
 
 # env file
 .env
+
+# local sqlite db
+prmoji.db
 
 # Editor/IDE
 # .idea/

@@ -1,0 +1,8 @@
+{
+  "action": "submitted",
+  "review": {
+    "state": "approved",
+    "user": {"login": "alice"}
+  },
+  "pull_request": {"html_url": "https://github.com/o/r/pull/123"}
+}
