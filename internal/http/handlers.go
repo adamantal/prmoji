@@ -75,14 +75,17 @@ func (h *Handlers) processSlackEvent(body []byte) {
 		return
 	}
 	if env.Event.Text == "" || env.Event.Channel == "" || env.Event.EventTS == "" {
+		h.Log.Debug("discarding empty slack message", "event", env.Event)
 		return
 	}
 
 	urls := slack.ExtractPRURLs(env.Event.Text)
 	if len(urls) == 0 {
+		h.Log.Debug("discarding slack message without PR URLs", "channel", env.Event.Channel, "text", env.Event.Text)
 		return
 	}
 
+	h.Log.Debug("ingesting slack message with PR URLs", "channel", env.Event.Channel, "count", len(urls))
 	for _, u := range urls {
 		if err := h.Store.InsertPRMessage(ctx, u, env.Event.Channel, env.Event.EventTS); err != nil {
 			h.Log.Error("insert pr message failed", "err", err, "pr_url", u)
