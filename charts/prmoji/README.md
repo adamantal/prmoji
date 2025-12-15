@@ -44,6 +44,8 @@ The SQLite file path is always `<persistence.mountPath>/prmoji.db`.
 
 It is not recommended to disable persistence, as it will lose all data on pod restart.
 
+The container runs as a **non-root** user; this chart sets `podSecurityContext.fsGroup=10001` by default so the mounted volume is writable across common storage classes.
+
 ### Cleanup Job
 
 A Job named `<release>-prmoji-cleanup` is created with `spec.suspend: true` by default.

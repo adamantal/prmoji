@@ -17,7 +17,8 @@ autoscaling:
 
 podAnnotations: {}
 
-podSecurityContext: {}
+podSecurityContext:
+  fsGroup: 10001
 
 securityContext:
   runAsNonRoot: true
