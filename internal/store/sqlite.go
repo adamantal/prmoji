@@ -83,6 +83,7 @@ func (s *SQLiteStore) initSchema(ctx context.Context) error {
 }
 
 func (s *SQLiteStore) InsertPRMessage(ctx context.Context, prURL, channel, ts string) error {
+	slog.Debug("inserting pr message", "pr_url", prURL, "channel", channel, "ts", ts)
 	_, err := s.db.ExecContext(
 		ctx,
 		sqlInsertPRMessage,
@@ -117,10 +118,12 @@ func (s *SQLiteStore) ListMessagesByPRURL(ctx context.Context, prURL string) ([]
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows: %w", err)
 	}
+	slog.Debug("listed messages by pr_url", "pr_url", prURL, "count", len(out))
 	return out, nil
 }
 
 func (s *SQLiteStore) DeleteByPRURL(ctx context.Context, prURL string) error {
+	slog.Debug("deleting messages by pr_url", "pr_url", prURL)
 	_, err := s.db.ExecContext(ctx, sqlDeleteMessagesByPRURL, prURL)
 	if err != nil {
 		return fmt.Errorf("delete by pr_url: %w", err)
