@@ -67,16 +67,3 @@ secret:
   # Name of an existing Secret that must contain:
   # - SLACK_TOKEN (required by the app)
   existingSecret: ""
-
-cleanupJob:
-  enabled: true
-  suspend: true
-  image:
-    repository: curlimages/curl
-    tag: "8.17.0"
-    pullPolicy: IfNotPresent
-  backoffLimit: 1
-  ttlSecondsAfterFinished: 300
-  # If true, job will call the public ingress host; otherwise it uses the in-cluster service.
-  useIngress: false
-  extraArgs: []

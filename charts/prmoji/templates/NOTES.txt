@@ -8,7 +8,3 @@ If ingress is enabled, check your configured hosts under .Values.ingress.hosts.
 This release expects an existing Secret named:
   {{ required "values.secret.existingSecret is required" .Values.secret.existingSecret }}
 The Secret must contain keys: SLACK_TOKEN.
-
-Cleanup job is created with spec.suspend={{ .Values.cleanupJob.suspend }}.
-To run it once:
-  kubectl patch job {{ include "prmoji.fullname" . }}-cleanup -n {{ .Release.Namespace }} -p '{"spec":{"suspend":false}}'
