@@ -73,7 +73,7 @@ cleanupJob:
   suspend: true
   image:
     repository: curlimages/curl
-    tag: "8.12.1"
+    tag: "8.17.0"
     pullPolicy: IfNotPresent
   backoffLimit: 1
   ttlSecondsAfterFinished: 300
