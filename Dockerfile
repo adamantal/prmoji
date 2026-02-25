@@ -30,4 +30,4 @@ EXPOSE 5000
 
 USER prmoji
 
-ENTRYPOINT ["/app/prmoji"]
+ENTRYPOINT ["/app/prmoji", "run"]
