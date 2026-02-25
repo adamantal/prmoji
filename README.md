@@ -71,6 +71,53 @@ This only has to be done once per Slack workspace.
 
 ### GitHub
 
+#### Automatic setup for orgs (recommended)
+
+The recommended way to configure GitHub webhooks — especially in larger organizations — is to use the built-in `prmoji` CLI. This lets you manage webhooks across many repositories at once using a GitHub Personal Access Token (PAT).
+
+1. Create a PAT with scopes that allow managing repository webhooks in your org (for GitHub.com, `admin:repo_hook` plus appropriate `repo` access is sufficient for private repos).
+2. Export the token:
+
+```bash
+export GITHUB_TOKEN=ghp_...
+```
+
+3. Run the setup command (dry-run first):
+
+```bash
+prmoji github-webhook-setup \
+  --org YOUR-ORG \
+  --url YOUR_HOST \
+  --dry-run
+```
+
+4. If the output looks good, run without `--dry-run`:
+
+```bash
+prmoji github-webhook-setup \
+  --org YOUR-ORG \
+  --url YOUR_HOST
+```
+
+By default this:
+
+- Targets all **non-archived, non-fork** repositories in the org that the token can see.
+- Creates or updates a webhook with:
+  - Payload URL `https://YOUR_HOST/event/github`
+  - Content type `application/json`
+  - Events: **Issue comments**, **Pull requests**, **Pull request reviews**, and **Pull request review comments**.
+
+Additional useful flags:
+
+- `--include-pattern` / `--exclude-pattern`: Go regexes to include/exclude repositories by name.
+- `--include-forks`: Also manage webhooks for forked repositories.
+- `--include-archived`: Also manage webhooks for archived repositories.
+- `--secret`: Set a webhook secret (handy if you later add signature verification).
+
+If you prefer to configure a single repository manually instead, or you only need a one-off setup, follow the steps below.
+
+#### Manual per-repo setup
+
 This has to be done for every repository you want to watch.
 
 - Go to `https://github.com/YOUR-ORG/YOUR-REPO/settings/hooks`
@@ -109,7 +156,7 @@ go build ./cmd/prmoji
 Run:
 
 ```bash
-SLACK_TOKEN='xoxb-...' ./prmoji
+SLACK_TOKEN='xoxb-...' ./prmoji run
 ```
 
 ## Other
