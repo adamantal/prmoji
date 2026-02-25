@@ -366,5 +366,3 @@ func shouldSelectRepo(r *github.Repository, opts SetupOptions, includeRe, exclud
 
 	return true, ""
 }
-
-

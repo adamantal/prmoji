@@ -185,16 +185,16 @@ func runGitHubWebhookSetup(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	opts := githubadmin.SetupOptions{
-		Org:            org,
-		URL:            url,
-		Token:          tok,
-		IncludePattern: includePattern,
-		ExcludePattern: excludePattern,
-		IncludeForks:   includeForks,
+		Org:             org,
+		URL:             url,
+		Token:           tok,
+		IncludePattern:  includePattern,
+		ExcludePattern:  excludePattern,
+		IncludeForks:    includeForks,
 		IncludeArchived: includeArchived,
-		DryRun:         dryRun,
-		Secret:         secret,
-		Verbose:        verbose,
+		DryRun:          dryRun,
+		Secret:          secret,
+		Verbose:         verbose,
 	}
 
 	if err := githubadmin.SetupOrgWebhooks(ctx, opts, logger); err != nil {

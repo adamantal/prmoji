@@ -65,4 +65,3 @@ func (w testWriter) Write(p []byte) (int, error) {
 	w.t.Log(string(p))
 	return len(p), nil
 }
-
