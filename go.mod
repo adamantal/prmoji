@@ -1,13 +1,13 @@
 module github.com/adamantal/prmoji
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/google/go-github/v82 v82.0.0
 	github.com/mattn/go-sqlite3 v1.14.34
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	golang.org/x/oauth2 v0.35.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
