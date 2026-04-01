@@ -1,6 +1,6 @@
 ## prmoji Helm chart
 
-This chart deploys **prmoji** as a Kubernetes **Deployment** with a **Service** and optional **Ingress**.
+This chart deploys **prmoji** as a Kubernetes **Deployment** with a **Service** and optional **Ingress** / **HTTPRoute**.
 
 ### Install
 
@@ -18,6 +18,17 @@ Enable ingress and set your host:
 helm upgrade --install prmoji ./charts/prmoji \
   --set ingress.enabled=true \
   --set ingress.hosts[0].host=prmoji.example.com
+```
+
+### HTTPRoute (Gateway API)
+
+Enable HTTPRoute and set your Gateway `parentRefs`:
+
+```bash
+helm upgrade --install prmoji ./charts/prmoji \
+  --set httpRoute.enabled=true \
+  --set httpRoute.parentRefs[0].name=your-gateway \
+  --set httpRoute.parentRefs[0].namespace=default
 ```
 
 ### Configuration
