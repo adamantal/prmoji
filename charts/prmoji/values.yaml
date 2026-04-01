@@ -40,6 +40,13 @@ ingress:
           pathType: Prefix
   tls: []
 
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hostnames: []
+  rules: []
+
 resources: {}
 
 nodeSelector: {}

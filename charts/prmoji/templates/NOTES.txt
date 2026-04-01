@@ -4,6 +4,7 @@ Service:
   {{ include "prmoji.fullname" . }}:{{ .Values.service.port }}
 
 If ingress is enabled, check your configured hosts under .Values.ingress.hosts.
+If HTTPRoute is enabled, check your configured values under .Values.httpRoute.
 
 This release expects an existing Secret named:
   {{ required "values.secret.existingSecret is required" .Values.secret.existingSecret }}
