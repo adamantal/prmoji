@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/google/go-github/v82 v82.0.0
+	github.com/google/go-github/v86 v86.0.0
 	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
