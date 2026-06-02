@@ -10,3 +10,18 @@ data:
   RETENTION_DAYS: {{ .Values.config.retentionDays | quote }}
   DB_PATH: {{ printf "%s/prmoji.db" .Values.persistence.mountPath | quote }}
   IGNORED_COMMENTERS: {{ .Values.config.ignoredCommenters | quote }}
+  {{- with .Values.config.emojiPools.commented }}
+  EMOJI_POOL_COMMENTED: {{ join "," . | quote }}
+  {{- end }}
+  {{- with .Values.config.emojiPools.approved }}
+  EMOJI_POOL_APPROVED: {{ join "," . | quote }}
+  {{- end }}
+  {{- with .Values.config.emojiPools.changesRequested }}
+  EMOJI_POOL_CHANGES_REQUESTED: {{ join "," . | quote }}
+  {{- end }}
+  {{- with .Values.config.emojiPools.merged }}
+  EMOJI_POOL_MERGED: {{ join "," . | quote }}
+  {{- end }}
+  {{- with .Values.config.emojiPools.closed }}
+  EMOJI_POOL_CLOSED: {{ join "," . | quote }}
+  {{- end }}

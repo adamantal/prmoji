@@ -40,6 +40,31 @@ Runtime config maps to the app env vars:
 - `config.retentionDays` → `RETENTION_DAYS`
 - `DB_PATH` is set automatically to `<persistence.mountPath>/prmoji.db`
 - `config.ignoredCommenters` → `IGNORED_COMMENTERS`
+- `config.emojiPools.*` → `EMOJI_POOL_*` (optional; each pool is a list of **9** Slack emoji names, comma-joined in the ConfigMap)
+
+#### Custom emoji pools (multi-PR)
+
+Override the nine reactions used per PR slot (link order in the Slack message). Omitted or empty lists use the app defaults.
+
+```bash
+helm upgrade --install prmoji ./charts/prmoji \
+  --set secret.existingSecret=prmoji-slack \
+  --set 'config.emojiPools.changesRequested={no_entry,x,negative_squared_cross_mark,warning,octagonal_sign,stop_sign,imp,rage,face_with_symbols_on_mouth}'
+```
+
+Or in `values.yaml`:
+
+```yaml
+config:
+  emojiPools:
+    changesRequested:
+      - prmoji-changes-1
+      - prmoji-changes-2
+      # ... exactly 9 entries total
+      - prmoji-changes-9
+```
+
+Environment variables (also work outside Kubernetes): `EMOJI_POOL_COMMENTED`, `EMOJI_POOL_APPROVED`, `EMOJI_POOL_CHANGES_REQUESTED`, `EMOJI_POOL_MERGED`, `EMOJI_POOL_CLOSED`.
 
 Secrets:
 

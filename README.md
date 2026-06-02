@@ -163,11 +163,41 @@ SLACK_TOKEN='xoxb-...' ./prmoji run
 
 ### Emoji mapping
 
+For a **single PR** in a Slack message (first link, slot 0):
+
 - **commented** → `speech_balloon`
 - **approved** → `white_check_mark`
 - **changes requested** → `no_entry`
 - **merged** → `pr-merged` *(custom emoji may be required in your Slack workspace)*
 - **closed (not merged)** → `wastebasket`
+
+#### Multiple PRs in one message
+
+- Up to **9** PR URLs per message are tracked (link order in the text = PR #1 … #9).
+- Each PR gets a stable **slot** (0-based in storage; **#1–#9** when labeling custom art).
+- The same GitHub action uses a **different emoji per slot** so Slack does not reject duplicate reaction names
+- Slot 0 uses the emojis above; slots 1–8 use the next entries in each action’s nine-emoji pool (see `internal/util/emoji.go`).
+- Numbered custom workspace emojis (e.g. `prmoji-approved-3` for the 3rd PR’s approval) can replace the interim standard names using the pattern `prmoji-{action}-{N}` where `N` is the 1-based slot number.
+
+#### Configuring emoji pools
+
+Each action has a pool of **9** comma-separated Slack emoji names (one per PR slot). If unset, built-in defaults are used.
+
+| Environment variable | Action |
+|------------------------|--------|
+| `EMOJI_POOL_COMMENTED` | commented |
+| `EMOJI_POOL_APPROVED` | approved |
+| `EMOJI_POOL_CHANGES_REQUESTED` | changes requested |
+| `EMOJI_POOL_MERGED` | merged |
+| `EMOJI_POOL_CLOSED` | closed (not merged) |
+
+Example:
+
+```bash
+export EMOJI_POOL_CHANGES_REQUESTED='prmoji-changes-1,prmoji-changes-2,prmoji-changes-3,prmoji-changes-4,prmoji-changes-5,prmoji-changes-6,prmoji-changes-7,prmoji-changes-8,prmoji-changes-9'
+```
+
+With Helm, set `config.emojiPools.changesRequested` in [`charts/prmoji/values.yaml`](charts/prmoji/values.yaml) (see the chart README).
 
 ### Endpoints
 
@@ -181,3 +211,4 @@ SLACK_TOKEN='xoxb-...' ./prmoji run
 
 - **No signature verification**: Slack/GitHub request signature verification is not implemented. Deploy behind HTTPS and consider restricting ingress to Slack/GitHub IP ranges and/or a private network.
 - **PR URL matching**: only matches URLs of the form `https://github.com/<owner>/<repo>/pull/<number>`.
+- **Multiple PRs**: at most 9 PR URLs per Slack message; additional links in the same message are ignored.

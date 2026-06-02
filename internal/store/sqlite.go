@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/adamantal/prmoji/internal/util"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -16,16 +17,19 @@ const (
 		inserted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		pr_url TEXT NOT NULL,
 		message_channel TEXT,
-		message_timestamp TEXT
+		message_timestamp TEXT,
+		slot_index INTEGER NOT NULL DEFAULT 0
 	);`
 
 	sqlCreateIndexPRMessagesPRURL = `CREATE INDEX IF NOT EXISTS idx_pr_messages_pr_url ON pr_messages(pr_url);`
 
 	sqlCreateIndexPRMessagesInsertedAt = `CREATE INDEX IF NOT EXISTS idx_pr_messages_inserted_at ON pr_messages(inserted_at);`
 
-	sqlInsertPRMessage = `INSERT INTO pr_messages(pr_url, message_channel, message_timestamp) VALUES(?, ?, ?);`
+	sqlAlterAddSlotIndex = `ALTER TABLE pr_messages ADD COLUMN slot_index INTEGER NOT NULL DEFAULT 0;`
 
-	sqlSelectMessagesByPRURL = `SELECT id, inserted_at, pr_url, message_channel, message_timestamp FROM pr_messages WHERE pr_url = ?;`
+	sqlInsertPRMessage = `INSERT INTO pr_messages(pr_url, message_channel, message_timestamp, slot_index) VALUES(?, ?, ?, ?);`
+
+	sqlSelectMessagesByPRURL = `SELECT id, inserted_at, pr_url, message_channel, message_timestamp, slot_index FROM pr_messages WHERE pr_url = ?;`
 
 	sqlDeleteMessagesByPRURL = `DELETE FROM pr_messages WHERE pr_url = ?;`
 
@@ -38,6 +42,7 @@ type Message struct {
 	PRURL            string
 	MessageChannel   string
 	MessageTimestamp string
+	SlotIndex        int
 }
 
 type SQLiteStore struct {
@@ -78,18 +83,61 @@ func (s *SQLiteStore) initSchema(ctx context.Context) error {
 			return fmt.Errorf("init schema: %w", err)
 		}
 	}
+	if err := s.migrateSlotIndex(ctx); err != nil {
+		return err
+	}
 	slog.Info("sqlite schema initialized")
 	return nil
 }
 
-func (s *SQLiteStore) InsertPRMessage(ctx context.Context, prURL, channel, ts string) error {
-	slog.Debug("inserting pr message", "pr_url", prURL, "channel", channel, "ts", ts)
+func (s *SQLiteStore) migrateSlotIndex(ctx context.Context) error {
+	has, err := s.columnExists(ctx, "pr_messages", "slot_index")
+	if err != nil {
+		return err
+	}
+	if has {
+		return nil
+	}
+	if _, err := s.db.ExecContext(ctx, sqlAlterAddSlotIndex); err != nil {
+		return fmt.Errorf("migrate slot_index: %w", err)
+	}
+	slog.Info("sqlite migrated: added slot_index column")
+	return nil
+}
+
+func (s *SQLiteStore) columnExists(ctx context.Context, table, column string) (bool, error) {
+	rows, err := s.db.QueryContext(ctx, "PRAGMA table_info("+table+")")
+	if err != nil {
+		return false, fmt.Errorf("pragma table_info: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dfltValue sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dfltValue, &pk); err != nil {
+			return false, fmt.Errorf("scan table_info: %w", err)
+		}
+		if name == column {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
+}
+
+func (s *SQLiteStore) InsertPRMessage(ctx context.Context, prURL, channel, ts string, slotIndex int) error {
+	if slotIndex < 0 || slotIndex >= util.MaxPRsPerMessage {
+		return fmt.Errorf("insert pr message: slot_index %d out of range 0..%d", slotIndex, util.MaxPRsPerMessage-1)
+	}
+	slog.Debug("inserting pr message", "pr_url", prURL, "channel", channel, "ts", ts, "slot_index", slotIndex)
 	_, err := s.db.ExecContext(
 		ctx,
 		sqlInsertPRMessage,
 		prURL,
 		channel,
 		ts,
+		slotIndex,
 	)
 	if err != nil {
 		return fmt.Errorf("insert pr message: %w", err)
@@ -110,7 +158,7 @@ func (s *SQLiteStore) ListMessagesByPRURL(ctx context.Context, prURL string) ([]
 	var out []Message
 	for rows.Next() {
 		var m Message
-		if err := rows.Scan(&m.ID, &m.InsertedAt, &m.PRURL, &m.MessageChannel, &m.MessageTimestamp); err != nil {
+		if err := rows.Scan(&m.ID, &m.InsertedAt, &m.PRURL, &m.MessageChannel, &m.MessageTimestamp, &m.SlotIndex); err != nil {
 			return nil, fmt.Errorf("scan message: %w", err)
 		}
 		out = append(out, m)

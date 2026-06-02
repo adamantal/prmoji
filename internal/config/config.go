@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/adamantal/prmoji/internal/util"
 	"github.com/spf13/viper"
 )
 
@@ -15,6 +16,7 @@ type Config struct {
 	IgnoredCommenters []string
 	RetentionDays     int
 	DBPath            string
+	EmojiPools        util.EmojiPools
 }
 
 func Load() (Config, error) {
@@ -50,6 +52,12 @@ func Load() (Config, error) {
 	if strings.TrimSpace(cfg.DBPath) == "" {
 		return Config{}, errors.New("DB_PATH cannot be empty")
 	}
+
+	pools, err := loadEmojiPools(v)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.EmojiPools = pools
 
 	return cfg, nil
 }

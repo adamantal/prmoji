@@ -85,14 +85,24 @@ func (h *Handlers) processSlackEvent(body []byte) {
 		return
 	}
 
-	h.Log.Debug("ingesting slack message with PR URLs", "channel", env.Event.Channel, "count", len(urls))
-	for _, u := range urls {
-		if err := h.Store.InsertPRMessage(ctx, u, env.Event.Channel, env.Event.EventTS); err != nil {
-			h.Log.Error("insert pr message failed", "err", err, "pr_url", u)
+	found := len(urls)
+	if found > util.MaxPRsPerMessage {
+		h.Log.Info("truncating PR URLs over limit",
+			"channel", env.Event.Channel,
+			"limit", util.MaxPRsPerMessage,
+			"found", found,
+		)
+		urls = urls[:util.MaxPRsPerMessage]
+	}
+
+	h.Log.Debug("ingesting slack message with PR URLs", "channel", env.Event.Channel, "count", len(urls), "found", found)
+	for i, u := range urls {
+		if err := h.Store.InsertPRMessage(ctx, u, env.Event.Channel, env.Event.EventTS, i); err != nil {
+			h.Log.Error("insert pr message failed", "err", err, "pr_url", u, "slot_index", i)
 		}
 	}
 
-	h.Log.Info("slack message ingested", "count", len(urls), "channel", env.Event.Channel)
+	h.Log.Info("slack message ingested", "count", len(urls), "found", found, "channel", env.Event.Channel)
 }
 
 func (h *Handlers) handleGitHubEvent(w http.ResponseWriter, r *http.Request) {
@@ -133,7 +143,6 @@ func (h *Handlers) processGitHubEvent(eventType string, body []byte) {
 		}
 	}
 
-	emoji := util.EmojiForAction(class.Action)
 	msgs, err := h.Store.ListMessagesByPRURL(ctx, class.PRURL)
 	if err != nil {
 		h.Log.Error("list messages failed", "err", err, "pr_url", class.PRURL)
@@ -144,8 +153,9 @@ func (h *Handlers) processGitHubEvent(eventType string, body []byte) {
 	}
 
 	for _, m := range msgs {
+		emoji := h.Cfg.EmojiPools.EmojiForAction(class.Action, m.SlotIndex)
 		if err := h.Slack.AddReaction(ctx, m.MessageChannel, m.MessageTimestamp, emoji); err != nil {
-			h.Log.Error("add reaction failed", "err", err, "pr_url", class.PRURL, "channel", m.MessageChannel, "ts", m.MessageTimestamp, "emoji", emoji)
+			h.Log.Error("add reaction failed", "err", err, "pr_url", class.PRURL, "channel", m.MessageChannel, "ts", m.MessageTimestamp, "slot_index", m.SlotIndex, "emoji", emoji)
 		}
 	}
 

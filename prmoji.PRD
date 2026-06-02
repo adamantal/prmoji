@@ -44,7 +44,7 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
 - If any of these fields are missing, the message is discarded.
 - The system must find **all** PR URLs in `text` using the regex:
   - `https://github.com/<owner>/<repo>/pull/<number>`
-- For each PR URL found, the system must store `(pr_url, message_channel, message_timestamp)` in SQLite.
+- For each PR URL found (up to **9** per message, in left-to-right order), the system must store `(pr_url, message_channel, message_timestamp, slot_index)` in SQLite where `slot_index` is `0` for the first URL, `1` for the second, etc. URLs beyond the ninth are ignored with a log entry.
 
 ### FR2 — GitHub event ingestion and action classification
 - The system must accept GitHub webhook callbacks at `POST /event/github`.
@@ -69,12 +69,14 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
 - If either `url` or `action` cannot be derived, the event is discarded.
 
 ### FR3 — Emoji reaction mapping
-- For each GitHub PR event that maps to a supported action, the system must add the following Slack emoji reaction to each matching stored Slack message:
+- For each GitHub PR event that maps to a supported action, the system must add a Slack emoji reaction to each matching stored Slack message.
+- Emoji is chosen from a **nine-entry pool** per action, indexed by `slot_index` (no wrap within 0..8). Slot 0 uses:
   - `commented` → `speech_balloon`
   - `approved` → `white_check_mark`
   - `changes_requested` → `no_entry`
   - `merged` → `pr-merged` *(custom emoji may be required in the workspace)*
   - `closed` → `wastebasket`
+- Display number for custom art is `slot_index + 1` (PR #1 … #9). Custom workspace emojis may follow `prmoji-{action}-{N}`.
 
 ### FR4 — Reaction suppression rules (anti-noise)
 For action `commented`, PRmoji must **not** add reactions when:
@@ -101,6 +103,7 @@ SQLite table: `pr_messages`
 - `pr_url` (varchar, not null) — GitHub PR URL
 - `message_channel` (varchar) — Slack channel ID
 - `message_timestamp` (varchar) — Slack message timestamp (`event_ts`)
+- `slot_index` (integer, not null, default 0) — 0-based index of this PR among URLs in the same Slack message (max 8)
 
 ## External integrations
 
@@ -136,6 +139,7 @@ SQLite table: `pr_messages`
 - **Optional**
   - `PORT`: HTTP listen port (default 5000).
   - `LOG_LEVEL`: log level (default `info`).
+  - `EMOJI_POOL_COMMENTED`, `EMOJI_POOL_APPROVED`, `EMOJI_POOL_CHANGES_REQUESTED`, `EMOJI_POOL_MERGED`, `EMOJI_POOL_CLOSED`: comma-separated lists of exactly nine Slack emoji names per action (override built-in multi-PR pools).
 
 ## Non-functional requirements
 - **Reliability**: webhook endpoints must respond quickly (current behavior responds `OK` before async processing).
@@ -146,7 +150,8 @@ SQLite table: `pr_messages`
   - Periodic cleanup supports deletion of rows older than 90 days (configurable by code call).
 
 ## Acceptance criteria (black-box)
-- When a Slack message contains one or more PR URLs, each URL is stored with the message’s channel and timestamp.
+- When a Slack message contains one or more PR URLs (up to 9), each URL is stored with the message’s channel, timestamp, and `slot_index` by link order.
+- When a message contains more than 9 PR URLs, only the first 9 are stored.
 - When a GitHub “approved” review arrives for a stored PR URL, PRmoji adds `:white_check_mark:` to the Slack message.
 - When a GitHub “changes requested” review arrives, PRmoji adds `:no_entry:`.
 - When a GitHub comment event arrives, PRmoji adds `:speech_balloon:` **unless** suppressed by the anti-noise rules.
