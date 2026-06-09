@@ -133,7 +133,7 @@ func (h *Handlers) processGitHubEvent(eventType string, body []byte) {
 		}
 	}
 
-	emoji := util.EmojiForAction(class.Action)
+	emoji := util.EmojiFor(class)
 	msgs, err := h.Store.ListMessagesByPRURL(ctx, class.PRURL)
 	if err != nil {
 		h.Log.Error("list messages failed", "err", err, "pr_url", class.PRURL)
