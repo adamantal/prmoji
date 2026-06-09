@@ -84,6 +84,15 @@ func DefaultEmojiPools() EmojiPools {
 	}
 }
 
+// EmojiFor picks the Slack emoji for a classified GitHub event and slot, taking the
+// commenter into account so that Copilot comments are distinguished from human ones.
+func (p EmojiPools) EmojiFor(c github.Classification, slotIndex int) string {
+	if c.Action == github.ActionCommented && github.IsCopilot(c.Commenter) {
+		return "robot_face"
+	}
+	return p.EmojiForAction(c.Action, slotIndex)
+}
+
 func (p EmojiPools) poolForAction(a github.Action) [MaxPRsPerMessage]string {
 	switch a {
 	case github.ActionCommented:

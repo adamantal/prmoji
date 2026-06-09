@@ -166,6 +166,7 @@ SLACK_TOKEN='xoxb-...' ./prmoji run
 For a **single PR** in a Slack message (first link, slot 0):
 
 - **commented** → `speech_balloon`
+- **commented by GitHub Copilot** → `robot_face`
 - **approved** → `white_check_mark`
 - **changes requested** → `no_entry`
 - **merged** → `pr-merged` *(custom emoji may be required in your Slack workspace)*

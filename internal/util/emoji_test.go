@@ -61,3 +61,33 @@ func TestSlotDisplayNumber(t *testing.T) {
 		t.Fatalf("got %d want 3", got)
 	}
 }
+
+func TestEmojiFor_CopilotComment(t *testing.T) {
+	p := DefaultEmojiPools()
+	cases := []struct {
+		name      string
+		commenter string
+		want      string
+	}{
+		{"human comment", "bob", "speech_balloon"},
+		{"copilot display name", "Copilot", "robot_face"},
+		{"copilot reviewer bot", "copilot-pull-request-reviewer[bot]", "robot_face"},
+		{"github copilot bot", "github-copilot[bot]", "robot_face"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := p.EmojiFor(github.Classification{Action: github.ActionCommented, Commenter: tc.commenter}, 0)
+			if got != tc.want {
+				t.Fatalf("expected %q got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestEmojiFor_CopilotOnlyAffectsComments(t *testing.T) {
+	p := DefaultEmojiPools()
+	got := p.EmojiFor(github.Classification{Action: github.ActionApproved, Commenter: "Copilot"}, 0)
+	if got != "white_check_mark" {
+		t.Fatalf("expected white_check_mark got %q", got)
+	}
+}

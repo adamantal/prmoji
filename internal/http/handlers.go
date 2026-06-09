@@ -153,7 +153,7 @@ func (h *Handlers) processGitHubEvent(eventType string, body []byte) {
 	}
 
 	for _, m := range msgs {
-		emoji := h.Cfg.EmojiPools.EmojiForAction(class.Action, m.SlotIndex)
+		emoji := h.Cfg.EmojiPools.EmojiFor(class, m.SlotIndex)
 		if err := h.Slack.AddReaction(ctx, m.MessageChannel, m.MessageTimestamp, emoji); err != nil {
 			h.Log.Error("add reaction failed", "err", err, "pr_url", class.PRURL, "channel", m.MessageChannel, "ts", m.MessageTimestamp, "slot_index", m.SlotIndex, "emoji", emoji)
 		}
