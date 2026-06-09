@@ -2,6 +2,16 @@ package util
 
 import "github.com/adamantal/prmoji/internal/github"
 
+// EmojiFor picks the Slack emoji for a classified GitHub event, taking the
+// commenter into account so that Copilot comments are distinguished from human
+// ones.
+func EmojiFor(c github.Classification) string {
+	if c.Action == github.ActionCommented && github.IsCopilot(c.Commenter) {
+		return "copilot"
+	}
+	return EmojiForAction(c.Action)
+}
+
 func EmojiForAction(a github.Action) string {
 	switch a {
 	case github.ActionCommented:

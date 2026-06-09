@@ -20,6 +20,12 @@ type Classification struct {
 	Commenter string
 }
 
+// IsCopilot reports whether the given GitHub login belongs to GitHub Copilot,
+// e.g. "Copilot", "copilot-pull-request-reviewer[bot]" or "github-copilot[bot]".
+func IsCopilot(login string) bool {
+	return strings.Contains(strings.ToLower(login), "copilot")
+}
+
 func Classify(eventType string, body []byte) (Classification, bool) {
 	switch strings.ToLower(strings.TrimSpace(eventType)) {
 	case "issue_comment":
