@@ -13,9 +13,9 @@ func TestEmojiFor_CopilotComment(t *testing.T) {
 		want      string
 	}{
 		{"human comment", "bob", "speech_balloon"},
-		{"copilot display name", "Copilot", "copilot"},
-		{"copilot reviewer bot", "copilot-pull-request-reviewer[bot]", "copilot"},
-		{"github copilot bot", "github-copilot[bot]", "copilot"},
+		{"copilot display name", "Copilot", "robot_face"},
+		{"copilot reviewer bot", "copilot-pull-request-reviewer[bot]", "robot_face"},
+		{"github copilot bot", "github-copilot[bot]", "robot_face"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

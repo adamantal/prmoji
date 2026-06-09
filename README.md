@@ -164,7 +164,7 @@ SLACK_TOKEN='xoxb-...' ./prmoji run
 ### Emoji mapping
 
 - **commented** → `speech_balloon`
-- **commented by GitHub Copilot** → `copilot` *(custom emoji may be required in your Slack workspace)*
+- **commented by GitHub Copilot** → `robot_face`
 - **approved** → `white_check_mark`
 - **changes requested** → `no_entry`
 - **merged** → `pr-merged` *(custom emoji may be required in your Slack workspace)*

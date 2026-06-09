@@ -7,7 +7,7 @@ import "github.com/adamantal/prmoji/internal/github"
 // ones.
 func EmojiFor(c github.Classification) string {
 	if c.Action == github.ActionCommented && github.IsCopilot(c.Commenter) {
-		return "copilot"
+		return "robot_face"
 	}
 	return EmojiForAction(c.Action)
 }
