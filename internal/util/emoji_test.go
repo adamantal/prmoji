@@ -31,6 +31,27 @@ func TestDefaultEmojiPools_distinctPerSlot(t *testing.T) {
 	}
 }
 
+func TestDefaultEmojiPools_globallyDistinct(t *testing.T) {
+	p := DefaultEmojiPools()
+	seen := make(map[string]github.Action)
+	actions := []github.Action{
+		github.ActionCommented,
+		github.ActionApproved,
+		github.ActionChangesRequested,
+		github.ActionMerged,
+		github.ActionClosed,
+	}
+	for _, action := range actions {
+		for i := 0; i < MaxPRsPerMessage; i++ {
+			name := p.EmojiForAction(action, i)
+			if prev, ok := seen[name]; ok {
+				t.Fatalf("duplicate default emoji %q: %s slot %d and %s", name, prev, i, action)
+			}
+			seen[name] = action
+		}
+	}
+}
+
 func TestEmojiPools_customOverrides(t *testing.T) {
 	p := DefaultEmojiPools()
 	p.ChangesRequested = [MaxPRsPerMessage]string{

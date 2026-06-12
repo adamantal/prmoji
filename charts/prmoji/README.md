@@ -49,7 +49,7 @@ Override the nine reactions used per PR slot (link order in the Slack message). 
 ```bash
 helm upgrade --install prmoji ./charts/prmoji \
   --set secret.existingSecret=prmoji-slack \
-  --set 'config.emojiPools.changesRequested={no_entry,x,negative_squared_cross_mark,warning,octagonal_sign,stop_sign,imp,rage,face_with_symbols_on_mouth}'
+  --set 'config.emojiPools.changesRequested={no_entry,x,negative_squared_cross_mark,warning,no_entry_sign,stop_sign,imp,rage,cursing_face}'
 ```
 
 Or in `values.yaml`:
