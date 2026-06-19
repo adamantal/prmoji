@@ -1,30 +1,121 @@
 package util
 
-import "github.com/adamantal/prmoji/internal/github"
+import (
+	"log/slog"
 
-// EmojiFor picks the Slack emoji for a classified GitHub event, taking the
-// commenter into account so that Copilot comments are distinguished from human
-// ones.
-func EmojiFor(c github.Classification) string {
+	"github.com/adamantal/prmoji/internal/github"
+)
+
+// MaxPRsPerMessage is the maximum number of PR URLs tracked per Slack message (slots 0..8).
+const MaxPRsPerMessage = 9
+
+// SlotDisplayNumber returns the 1-based PR index shown on numbered custom emojis (slot 0 → 1).
+func SlotDisplayNumber(slotIndex int) int {
+	return slotIndex + 1
+}
+
+// EmojiPools holds nine Slack emoji names per action (index = slot_index in a message).
+type EmojiPools struct {
+	Commented        [MaxPRsPerMessage]string
+	Approved         [MaxPRsPerMessage]string
+	ChangesRequested [MaxPRsPerMessage]string
+	Merged           [MaxPRsPerMessage]string
+	Closed           [MaxPRsPerMessage]string
+}
+
+// DefaultEmojiPools returns the built-in emoji pools (slot 0 matches single-PR behavior).
+func DefaultEmojiPools() EmojiPools {
+	return EmojiPools{
+		Commented: [MaxPRsPerMessage]string{
+			"speech_balloon",
+			"mega",
+			"thought_balloon",
+			"envelope",
+			"incoming_envelope",
+			"email",
+			"memo",
+			"pencil2",
+			"writing_hand",
+		},
+		Approved: [MaxPRsPerMessage]string{
+			"white_check_mark",
+			"heavy_check_mark",
+			"ballot_box_with_check",
+			"thumbsup",
+			"ok_hand",
+			"raised_hands",
+			"muscle",
+			"star",
+			"sparkles",
+		},
+		ChangesRequested: [MaxPRsPerMessage]string{
+			"no_entry",
+			"x",
+			"negative_squared_cross_mark",
+			"warning",
+			"no_entry_sign",
+			"stop_sign",
+			"imp",
+			"rage",
+			"cursing_face",
+		},
+		Merged: [MaxPRsPerMessage]string{
+			"pr-merged",
+			"tada",
+			"rocket",
+			"balloon",
+			"gift",
+			"trophy",
+			"champagne",
+			"beers",
+			"confetti_ball",
+		},
+		Closed: [MaxPRsPerMessage]string{
+			"wastebasket",
+			"file_cabinet",
+			"door",
+			"lock",
+			"postbox",
+			"do_not_litter",
+			"hole",
+			"black_large_square",
+			"eject_button",
+		},
+	}
+}
+
+// EmojiFor picks the Slack emoji for a classified GitHub event and slot, taking the
+// commenter into account so that Copilot comments are distinguished from human ones.
+func (p EmojiPools) EmojiFor(c github.Classification, slotIndex int) string {
 	if c.Action == github.ActionCommented && github.IsCopilot(c.Commenter) {
 		return "robot_face"
 	}
-	return EmojiForAction(c.Action)
+	return p.EmojiForAction(c.Action, slotIndex)
 }
 
-func EmojiForAction(a github.Action) string {
+func (p EmojiPools) poolForAction(a github.Action) [MaxPRsPerMessage]string {
 	switch a {
 	case github.ActionCommented:
-		return "speech_balloon"
+		return p.Commented
 	case github.ActionApproved:
-		return "white_check_mark"
+		return p.Approved
 	case github.ActionChangesRequested:
-		return "no_entry"
+		return p.ChangesRequested
 	case github.ActionMerged:
-		return "pr-merged"
+		return p.Merged
 	case github.ActionClosed:
-		return "wastebasket"
+		return p.Closed
 	default:
-		return "speech_balloon"
+		return p.Commented
 	}
+}
+
+// EmojiForAction returns the Slack reaction name for the given action and slot_index (0-based PR order).
+func (p EmojiPools) EmojiForAction(a github.Action, slotIndex int) string {
+	pool := p.poolForAction(a)
+	if slotIndex < 0 || slotIndex >= len(pool) {
+		slog.Warn("slot index out of range, using slot 0", "slot", slotIndex, "action", a)
+		slotIndex = 0
+	}
+	return pool[slotIndex]
 }
