@@ -8,6 +8,9 @@ type issueCommentEvent struct {
 		PullRequest struct {
 			HTMLURL string `json:"html_url"`
 		} `json:"pull_request"`
+		User struct {
+			Login string `json:"login"`
+		} `json:"user"`
 	} `json:"issue"`
 	Comment struct {
 		User struct {
@@ -31,5 +34,6 @@ func classifyIssueComment(body []byte) (Classification, bool) {
 		Action:    ActionCommented,
 		PRURL:     e.Issue.PullRequest.HTMLURL,
 		Commenter: e.Comment.User.Login,
+		Author:    e.Issue.User.Login,
 	}, true
 }

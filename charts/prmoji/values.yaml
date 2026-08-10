@@ -69,6 +69,8 @@ config:
   logLevel: info
   retentionDays: 90
   ignoredCommenters: ""
+  # Suppress comment reactions when the commenter is the PR's own author.
+  suppressAuthorComments: true
   # Optional emoji pools for multi-PR messages (slot 0 = first PR link in the message).
   # Leave empty to use app defaults. Each list must have exactly 9 Slack emoji names.
   emojiPools:
