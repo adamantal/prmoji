@@ -141,6 +141,13 @@ func (h *Handlers) processGitHubEvent(eventType string, body []byte) {
 				return
 			}
 		}
+		if h.Cfg.SuppressAuthorComments {
+			author := strings.ToLower(strings.TrimSpace(class.Author))
+			if who != "" && who == author {
+				h.Log.Info("suppressed author self-comment reaction", "pr_url", class.PRURL, "commenter", who)
+				return
+			}
+		}
 	}
 
 	msgs, err := h.Store.ListMessagesByPRURL(ctx, class.PRURL)

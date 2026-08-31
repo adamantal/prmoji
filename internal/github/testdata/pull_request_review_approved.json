@@ -4,5 +4,5 @@
     "state": "approved",
     "user": {"login": "alice"}
   },
-  "pull_request": {"html_url": "https://github.com/o/r/pull/123"}
+  "pull_request": {"html_url": "https://github.com/o/r/pull/123", "user": {"login": "carol"}}
 }

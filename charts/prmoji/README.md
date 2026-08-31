@@ -40,6 +40,7 @@ Runtime config maps to the app env vars:
 - `config.retentionDays` → `RETENTION_DAYS`
 - `DB_PATH` is set automatically to `<persistence.mountPath>/prmoji.db`
 - `config.ignoredCommenters` → `IGNORED_COMMENTERS`
+- `config.suppressAuthorComments` → `SUPPRESS_AUTHOR_COMMENTS` (default `true`)
 - `config.emojiPools.*` → `EMOJI_POOL_*` (optional; each pool is a list of **9** Slack emoji names, comma-joined in the ConfigMap)
 
 #### Custom emoji pools (multi-PR)

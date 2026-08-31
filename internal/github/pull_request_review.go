@@ -15,6 +15,9 @@ type prReviewEvent struct {
 	} `json:"review"`
 	PullRequest struct {
 		HTMLURL string `json:"html_url"`
+		User    struct {
+			Login string `json:"login"`
+		} `json:"user"`
 	} `json:"pull_request"`
 }
 
@@ -32,11 +35,11 @@ func classifyPRReview(body []byte) (Classification, bool) {
 
 	switch strings.ToLower(e.Review.State) {
 	case "commented":
-		return Classification{Action: ActionCommented, PRURL: e.PullRequest.HTMLURL, Commenter: e.Review.User.Login}, true
+		return Classification{Action: ActionCommented, PRURL: e.PullRequest.HTMLURL, Commenter: e.Review.User.Login, Author: e.PullRequest.User.Login}, true
 	case "approved":
-		return Classification{Action: ActionApproved, PRURL: e.PullRequest.HTMLURL, Commenter: e.Review.User.Login}, true
+		return Classification{Action: ActionApproved, PRURL: e.PullRequest.HTMLURL, Commenter: e.Review.User.Login, Author: e.PullRequest.User.Login}, true
 	case "changes_requested":
-		return Classification{Action: ActionChangesRequested, PRURL: e.PullRequest.HTMLURL, Commenter: e.Review.User.Login}, true
+		return Classification{Action: ActionChangesRequested, PRURL: e.PullRequest.HTMLURL, Commenter: e.Review.User.Login, Author: e.PullRequest.User.Login}, true
 	default:
 		return Classification{}, false
 	}

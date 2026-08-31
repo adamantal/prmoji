@@ -10,13 +10,14 @@ import (
 )
 
 type Config struct {
-	SlackToken        string
-	Port              int
-	LogLevel          string
-	IgnoredCommenters []string
-	RetentionDays     int
-	DBPath            string
-	EmojiPools        util.EmojiPools
+	SlackToken             string
+	Port                   int
+	LogLevel               string
+	IgnoredCommenters      []string
+	SuppressAuthorComments bool
+	RetentionDays          int
+	DBPath                 string
+	EmojiPools             util.EmojiPools
 }
 
 func Load() (Config, error) {
@@ -29,6 +30,7 @@ func Load() (Config, error) {
 	v.SetDefault("RETENTION_DAYS", 90)
 	v.SetDefault("DB_PATH", "./prmoji.db")
 	v.SetDefault("IGNORED_COMMENTERS", "")
+	v.SetDefault("SUPPRESS_AUTHOR_COMMENTS", true)
 
 	cfg := Config{
 		SlackToken:    v.GetString("SLACK_TOKEN"),
@@ -39,6 +41,7 @@ func Load() (Config, error) {
 	}
 
 	cfg.IgnoredCommenters = strings.Split(v.GetString("IGNORED_COMMENTERS"), ",")
+	cfg.SuppressAuthorComments = v.GetBool("SUPPRESS_AUTHOR_COMMENTS")
 
 	if strings.TrimSpace(cfg.SlackToken) == "" {
 		return Config{}, errors.New("SLACK_TOKEN is required")

@@ -1,5 +1,5 @@
 {
   "action": "created",
-  "issue": {"pull_request": {"html_url": "https://github.com/o/r/pull/1"}},
+  "issue": {"pull_request": {"html_url": "https://github.com/o/r/pull/1"}, "user": {"login": "alice"}},
   "comment": {"user": {"login": "bob"}}
 }

@@ -18,6 +18,7 @@ type Classification struct {
 	Action    Action
 	PRURL     string
 	Commenter string
+	Author    string
 }
 
 // IsCopilot reports whether the given GitHub login belongs to GitHub Copilot,

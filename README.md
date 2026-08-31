@@ -144,6 +144,7 @@ Environment variables:
   - `DB_PATH`: path to SQLite database file (default `./prmoji.db`)
   - `RETENTION_DAYS`: delete mappings older than N days (default `90`)
   - `IGNORED_COMMENTERS`: comma-separated GitHub usernames to suppress *comment* reactions for (default empty)
+  - `SUPPRESS_AUTHOR_COMMENTS`: suppress *comment* reactions when the commenter is the PR's own author, so a self-comment isn't mistaken for a review (default `true`)
 
 ## Run locally
 
@@ -165,7 +166,7 @@ SLACK_TOKEN='xoxb-...' ./prmoji run
 
 For a **single PR** in a Slack message (first link, slot 0):
 
-- **commented** → `speech_balloon`
+- **commented** → `speech_balloon` *(suppressed when the commenter is the PR author; see `SUPPRESS_AUTHOR_COMMENTS`)*
 - **commented by GitHub Copilot** → `robot_face`
 - **approved** → `white_check_mark`
 - **changes requested** → `no_entry`
