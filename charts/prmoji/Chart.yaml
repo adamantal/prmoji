@@ -3,5 +3,5 @@ name: prmoji
 description: prmoji - Slack reactions for GitHub PR events
 
 type: application
-version: 0.2.0
+version: 0.1.0
 appVersion: "v0.1.0"
