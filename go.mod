@@ -1,9 +1,10 @@
 module github.com/adamantal/prmoji
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/google/go-github/v82 v82.0.0
+	github.com/google/go-github/v91 v91.0.0
 	github.com/mattn/go-sqlite3 v1.14.50
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
