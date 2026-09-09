@@ -1,4 +1,4 @@
-FROM golang:1.25.7-bookworm AS builder
+FROM golang:1.27.1-bookworm AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
