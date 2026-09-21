@@ -63,6 +63,8 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
     - `pull_request` where `body.action === "closed"` and `pull_request.merged === true`
   - **closed**
     - `pull_request` where `body.action === "closed"` and `pull_request.merged === false`
+  - **review_dismissed**
+    - `pull_request_review` where `body.action === "dismissed"` (covers manual dismissal and branch-protection stale-review dismissal)
 - The PR URL must be derived from:
   - `body.pull_request.html_url` when present, else
   - `body.issue.pull_request.html_url` for issue_comment events.
@@ -77,6 +79,7 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
   - `merged` → `pr-merged` *(custom emoji may be required in the workspace)*
   - `closed` → `wastebasket`
 - Display number for custom art is `slot_index + 1` (PR #1 … #9). Custom workspace emojis may follow `prmoji-{action}-{N}`.
+- Action `review_dismissed` **removes** reactions instead of adding one. It clears both the `approved` and the `changes_requested` emoji for the slot, because GitHub does not report the dismissed review's original state. A reaction that is not present is a no-op.
 
 ### FR4 — Reaction suppression rules (anti-noise)
 For action `commented`, PRmoji must **not** add reactions when:
@@ -113,7 +116,7 @@ SQLite table: `pr_messages`
   - Bot events: `message.channels`, `message.groups`
 - Bot must be invited to channels where it should listen.
 - Slack Web API token (`SLACK_TOKEN`) must allow:
-  - Adding reactions (`reactions.add`)
+  - Adding reactions (`reactions.add`) and removing them (`reactions.remove`)
 
 ### GitHub
 - GitHub webhooks must POST to `/event/github` with content type `application/json`.
@@ -154,6 +157,7 @@ SQLite table: `pr_messages`
 - When a message contains more than 9 PR URLs, only the first 9 are stored.
 - When a GitHub “approved” review arrives for a stored PR URL, PRmoji adds `:white_check_mark:` to the Slack message.
 - When a GitHub “changes requested” review arrives, PRmoji adds `:no_entry:`.
+- When a review is dismissed, PRmoji removes `:white_check_mark:` and `:no_entry:` from the Slack message(s) and keeps the stored mapping(s).
 - When a GitHub comment event arrives, PRmoji adds `:speech_balloon:` **unless** suppressed by the anti-noise rules.
 - When the PR is merged, PRmoji adds `:pr-merged:` to the Slack message(s) and then deletes the stored mapping(s).
 - When the PR is closed without merging, PRmoji adds `:wastebasket:` and deletes the stored mapping(s).

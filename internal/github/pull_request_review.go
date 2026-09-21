@@ -26,11 +26,15 @@ func classifyPRReview(body []byte) (Classification, bool) {
 	if err := json.Unmarshal(body, &e); err != nil {
 		return Classification{}, false
 	}
-	if e.Action != "submitted" {
+	if e.Action != "submitted" && e.Action != "dismissed" {
 		return Classification{}, false
 	}
 	if e.PullRequest.HTMLURL == "" {
 		return Classification{}, false
+	}
+
+	if e.Action == "dismissed" {
+		return Classification{Action: ActionReviewDismissed, PRURL: e.PullRequest.HTMLURL, Commenter: e.Review.User.Login, Author: e.PullRequest.User.Login}, true
 	}
 
 	switch strings.ToLower(e.Review.State) {

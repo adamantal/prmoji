@@ -137,7 +137,7 @@ This has to be done for every repository you want to watch.
 Environment variables:
 
 - **Required**
-  - `SLACK_TOKEN`: Slack bot token used for Slack Web API calls (`reactions.add`)
+  - `SLACK_TOKEN`: Slack bot token used for Slack Web API calls (`reactions.add`, `reactions.remove`)
 - **Optional**
   - `PORT`: HTTP listen port (default `5000`)
   - `LOG_LEVEL`: log level (default `info`)
@@ -172,6 +172,15 @@ For a **single PR** in a Slack message (first link, slot 0):
 - **changes requested** → `no_entry`
 - **merged** → `pr-merged` *(custom emoji may be required in your Slack workspace)*
 - **closed (not merged)** → `wastebasket`
+- **review dismissed** → *removes* `white_check_mark` **and** `no_entry`
+
+#### Dismissed reviews
+
+When a review is dismissed — by a reviewer, or by branch protection dismissing stale reviews — prmoji removes the approval and changes-requested emoji for that PR's slot.
+
+GitHub reports the dismissed review's state as `dismissed`, so the original state is unknown. Both emoji are therefore cleared; Slack answers `no_reaction` for one that is not present, so this is harmless. A later approval re-adds the emoji.
+
+Note: prmoji does not track how many reviewers approved. If two people approve and one approval is dismissed, the emoji is removed even though the other approval stands.
 
 #### Multiple PRs in one message
 
