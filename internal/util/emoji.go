@@ -120,10 +120,7 @@ func (p EmojiPools) EmojiForAction(a github.Action, slotIndex int) string {
 	return pool[slotIndex]
 }
 
-// EmojisToRemove returns the Slack reaction names to clear for a dismissal action.
-// GitHub does not report the dismissed review's original state, so both the
-// approved and the changes-requested emoji for the slot are cleared. Slack
-// answers "no_reaction" for a reaction that is not present, so this is safe.
+// EmojisToRemove returns the reactions to clear for a dismissal; the dismissed review's state is unknown, so both are cleared.
 func (p EmojiPools) EmojisToRemove(a github.Action, slotIndex int) []string {
 	if !a.RemovesReaction() {
 		return nil

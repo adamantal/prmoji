@@ -12,10 +12,7 @@ const (
 	ActionChangesRequested Action = "changes_requested"
 	ActionMerged           Action = "merged"
 	ActionClosed           Action = "closed"
-	// ActionReviewDismissed is emitted when a review is dismissed, either by a
-	// user or by branch protection dismissing stale reviews. GitHub does not
-	// report the dismissed review's original state, so this action clears both
-	// the approved and the changes-requested reaction.
+	// ActionReviewDismissed covers both manual and stale-review dismissal.
 	ActionReviewDismissed Action = "review_dismissed"
 )
 

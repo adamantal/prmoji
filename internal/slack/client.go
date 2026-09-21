@@ -38,15 +38,11 @@ type slackAPIResponse struct {
 	Error string `json:"error"`
 }
 
-// AddReaction adds emojiName to the given message, treating an already present
-// reaction and a missing message as success.
 func (c *Client) AddReaction(ctx context.Context, channel, timestamp, emojiName string) error {
 	c.log.Debug("adding reaction", "channel", channel, "timestamp", timestamp, "emoji", emojiName)
 	return c.react(ctx, "reactions.add", channel, timestamp, emojiName, "already_reacted", "reaction added")
 }
 
-// RemoveReaction clears emojiName from the given message, treating an absent
-// reaction and a missing message as success.
 func (c *Client) RemoveReaction(ctx context.Context, channel, timestamp, emojiName string) error {
 	c.log.Debug("removing reaction", "channel", channel, "timestamp", timestamp, "emoji", emojiName)
 	return c.react(ctx, "reactions.remove", channel, timestamp, emojiName, "no_reaction", "reaction removed")
