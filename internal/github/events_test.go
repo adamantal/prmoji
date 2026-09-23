@@ -73,3 +73,36 @@ func TestClassify_IssueCommentByAuthor(t *testing.T) {
 		t.Fatalf("expected commenter and author alice, got commenter=%q author=%q", c.Commenter, c.Author)
 	}
 }
+
+//go:embed testdata/pull_request_review_dismissed.json
+var fixturePullRequestReviewDismissed []byte
+
+func TestClassify_PullRequestReviewDismissed(t *testing.T) {
+	c, ok := Classify("pull_request_review", fixturePullRequestReviewDismissed)
+	if !ok {
+		t.Fatalf("expected ok")
+	}
+	if c.Action != ActionReviewDismissed {
+		t.Fatalf("expected %q got %q", ActionReviewDismissed, c.Action)
+	}
+	if !c.Action.RemovesReaction() {
+		t.Fatalf("expected %q to remove reactions", c.Action)
+	}
+	if c.PRURL != "https://github.com/o/r/pull/123" {
+		t.Fatalf("unexpected url: %s", c.PRURL)
+	}
+	if c.Commenter != "alice" {
+		t.Fatalf("expected reviewer alice got %q", c.Commenter)
+	}
+	if c.Author != "carol" {
+		t.Fatalf("expected author carol got %q", c.Author)
+	}
+}
+
+func TestRemovesReaction_OnlyDismissal(t *testing.T) {
+	for _, a := range []Action{ActionCommented, ActionApproved, ActionChangesRequested, ActionMerged, ActionClosed} {
+		if a.RemovesReaction() {
+			t.Fatalf("expected %q to add a reaction, not remove", a)
+		}
+	}
+}

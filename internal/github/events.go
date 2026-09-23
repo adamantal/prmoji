@@ -12,7 +12,14 @@ const (
 	ActionChangesRequested Action = "changes_requested"
 	ActionMerged           Action = "merged"
 	ActionClosed           Action = "closed"
+	// ActionReviewDismissed covers both manual and stale-review dismissal.
+	ActionReviewDismissed Action = "review_dismissed"
 )
+
+// RemovesReaction reports whether the action should remove reactions instead of adding one.
+func (a Action) RemovesReaction() bool {
+	return a == ActionReviewDismissed
+}
 
 type Classification struct {
 	Action    Action

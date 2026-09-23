@@ -112,3 +112,37 @@ func TestEmojiFor_CopilotOnlyAffectsComments(t *testing.T) {
 		t.Fatalf("expected white_check_mark got %q", got)
 	}
 }
+
+func TestEmojisToRemove_DismissalClearsBothReviewEmojis(t *testing.T) {
+	p := DefaultEmojiPools()
+	for slot := 0; slot < MaxPRsPerMessage; slot++ {
+		got := p.EmojisToRemove(github.ActionReviewDismissed, slot)
+		want := []string{p.Approved[slot], p.ChangesRequested[slot]}
+		if len(got) != len(want) {
+			t.Fatalf("slot %d: expected %d emojis got %v", slot, len(want), got)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Fatalf("slot %d: expected %q got %q", slot, want[i], got[i])
+			}
+		}
+	}
+}
+
+func TestEmojisToRemove_NilForAddActions(t *testing.T) {
+	p := DefaultEmojiPools()
+	for _, a := range []github.Action{github.ActionCommented, github.ActionApproved, github.ActionChangesRequested, github.ActionMerged, github.ActionClosed} {
+		if got := p.EmojisToRemove(a, 0); got != nil {
+			t.Fatalf("expected nil for %q got %v", a, got)
+		}
+	}
+}
+
+func TestEmojisToRemove_DeduplicatesIdenticalPools(t *testing.T) {
+	p := DefaultEmojiPools()
+	p.ChangesRequested = p.Approved
+	got := p.EmojisToRemove(github.ActionReviewDismissed, 0)
+	if len(got) != 1 || got[0] != p.Approved[0] {
+		t.Fatalf("expected single %q got %v", p.Approved[0], got)
+	}
+}

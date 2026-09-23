@@ -119,3 +119,15 @@ func (p EmojiPools) EmojiForAction(a github.Action, slotIndex int) string {
 	}
 	return pool[slotIndex]
 }
+
+// EmojisToRemove returns the reactions to clear for a dismissal; the dismissed review's state is unknown, so both are cleared.
+func (p EmojiPools) EmojisToRemove(a github.Action, slotIndex int) []string {
+	if !a.RemovesReaction() {
+		return nil
+	}
+	out := []string{p.EmojiForAction(github.ActionApproved, slotIndex)}
+	if changes := p.EmojiForAction(github.ActionChangesRequested, slotIndex); changes != out[0] {
+		out = append(out, changes)
+	}
+	return out
+}
