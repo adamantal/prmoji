@@ -43,7 +43,8 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
   - `event_ts` (message timestamp used by Slack reactions API)
 - If any of these fields are missing, the message is discarded.
 - The system must find **all** PR URLs in `text` using the regex:
-  - `https://github.com/<owner>/<repo>/pull/<number>`
+  - `https?://github.com/<owner>/<repo>/pull/<number>` (also inside Slack `<url|label>` links)
+- `http://` matches must be normalized to `https://` before storing, so they match GitHub `html_url` values.
 - For each PR URL found (up to **9** per message, in left-to-right order), the system must store `(pr_url, message_channel, message_timestamp, slot_index)` in SQLite where `slot_index` is `0` for the first URL, `1` for the second, etc. URLs beyond the ninth are ignored with a log entry.
 
 ### FR2 — GitHub event ingestion and action classification

@@ -37,4 +37,39 @@ func TestExtractPRURLs(t *testing.T) {
 			t.Fatalf("unexpected url[0]: %s", urls[0])
 		}
 	})
+
+	t.Run("extracts labelled links and normalizes http to https", func(t *testing.T) {
+		// Slack sends links hidden behind text as <url|label>; links built from a bare
+		// github.com/... in the Slack link dialog get an http:// scheme.
+		text := "" +
+			"- <http://github.com/a/b/pull/1|feat: first change>\n" +
+			"- <https://github.com/c/d/pull/22|fix: second change>\n" +
+			"- <http://github.com/e/f/pull/333|chore: third change>"
+
+		urls := ExtractPRURLs(text)
+		want := []string{
+			"https://github.com/a/b/pull/1",
+			"https://github.com/c/d/pull/22",
+			"https://github.com/e/f/pull/333",
+		}
+		if len(urls) != len(want) {
+			t.Fatalf("expected %d urls got %d: %#v", len(want), len(urls), urls)
+		}
+		for i := range want {
+			if urls[i] != want[i] {
+				t.Fatalf("unexpected url[%d]: %s", i, urls[i])
+			}
+		}
+	})
+
+	t.Run("dedupes http and https links to the same PR", func(t *testing.T) {
+		text := "<http://github.com/a/b/pull/1|label> and https://github.com/a/b/pull/1"
+		urls := ExtractPRURLs(text)
+		if len(urls) != 1 {
+			t.Fatalf("expected 1 url got %d: %#v", len(urls), urls)
+		}
+		if urls[0] != "https://github.com/a/b/pull/1" {
+			t.Fatalf("unexpected url[0]: %s", urls[0])
+		}
+	})
 }
