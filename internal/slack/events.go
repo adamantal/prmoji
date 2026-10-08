@@ -17,7 +17,6 @@ type SlackEvent struct {
 	EventTS string `json:"event_ts"`
 }
 
-// Slack prefixes http:// when a link is built from a bare github.com/... in its link dialog.
 var prURLRe = regexp.MustCompile(`https?://github\.com/[^/\s]+/[^/\s]+/pull/\d+`)
 
 func ParseEnvelope(body []byte) (EventEnvelope, error) {
@@ -40,7 +39,6 @@ func ExtractPRURLs(text string) []string {
 	seen := make(map[string]struct{}, len(matches))
 	out := make([]string, 0, len(matches))
 	for _, m := range matches {
-		// GitHub webhooks always report https html_urls; store the same form so lookups match.
 		if rest, ok := strings.CutPrefix(m, "http://"); ok {
 			m = "https://" + rest
 		}

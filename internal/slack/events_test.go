@@ -39,8 +39,6 @@ func TestExtractPRURLs(t *testing.T) {
 	})
 
 	t.Run("extracts labelled links and normalizes http to https", func(t *testing.T) {
-		// Slack sends links hidden behind text as <url|label>; links built from a bare
-		// github.com/... in the Slack link dialog get an http:// scheme.
 		text := "" +
 			"- <http://github.com/a/b/pull/1|feat: first change>\n" +
 			"- <https://github.com/c/d/pull/22|fix: second change>\n" +
