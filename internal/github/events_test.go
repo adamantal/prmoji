@@ -99,7 +99,33 @@ func TestClassify_PullRequestReviewDismissed(t *testing.T) {
 	}
 }
 
-func TestRemovesReaction_OnlyDismissal(t *testing.T) {
+//go:embed testdata/pull_request_reopened.json
+var fixturePullRequestReopened []byte
+
+func TestClassify_PullRequestReopened(t *testing.T) {
+	c, ok := Classify("pull_request", fixturePullRequestReopened)
+	if !ok {
+		t.Fatalf("expected ok")
+	}
+	if c.Action != ActionReopened {
+		t.Fatalf("expected %q got %q", ActionReopened, c.Action)
+	}
+	if !c.Action.RemovesReaction() {
+		t.Fatalf("expected %q to remove reactions", c.Action)
+	}
+	if c.PRURL != "https://github.com/o/r/pull/9" {
+		t.Fatalf("unexpected url: %s", c.PRURL)
+	}
+}
+
+func TestClassify_PullRequestOtherActionIgnored(t *testing.T) {
+	body := []byte(`{"action": "opened", "pull_request": {"html_url": "https://github.com/o/r/pull/9"}}`)
+	if _, ok := Classify("pull_request", body); ok {
+		t.Fatalf("expected opened to be ignored")
+	}
+}
+
+func TestRemovesReaction_OnlyRemovingActions(t *testing.T) {
 	for _, a := range []Action{ActionCommented, ActionApproved, ActionChangesRequested, ActionMerged, ActionClosed} {
 		if a.RemovesReaction() {
 			t.Fatalf("expected %q to add a reaction, not remove", a)

@@ -12,7 +12,7 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
 - **Automatically detect PR links** posted in Slack channels where the PRmoji bot is present.
 - **Persist a mapping** from PR URL → Slack message (channel, timestamp).
 - On GitHub PR activity, **lookup related Slack messages** and **add a corresponding emoji reaction**.
-- **Remove stale mappings** when PRs are merged/closed, and via a cleanup endpoint for old rows.
+- **Remove stale mappings** when PRs are merged, and via a cleanup endpoint for old rows.
 - Optionally, for specific repos/labels, **post a merge notification** to a dedicated channel.
 
 ## Non-goals / Out of scope
@@ -30,7 +30,7 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
 ## Primary user stories
 - As a developer, when I paste a GitHub PR link into a Slack channel, PRmoji should remember that message.
 - As a developer, when someone approves/requests changes/comments on that PR in GitHub, PRmoji should add a relevant emoji reaction to my Slack message.
-- As a developer, when the PR is merged or closed, PRmoji should reflect that with a reaction and stop tracking it.
+- As a developer, when the PR is merged or closed, PRmoji should reflect that with a reaction. Merged PRs stop being tracked; a reopened PR loses its closed reaction.
 
 ## Functional requirements
 
@@ -63,6 +63,8 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
     - `pull_request` where `body.action === "closed"` and `pull_request.merged === true`
   - **closed**
     - `pull_request` where `body.action === "closed"` and `pull_request.merged === false`
+  - **reopened**
+    - `pull_request` where `body.action === "reopened"`
   - **review_dismissed**
     - `pull_request_review` where `body.action === "dismissed"` (covers manual dismissal and branch-protection stale-review dismissal)
 - The PR URL must be derived from:
@@ -80,6 +82,7 @@ Teams often share PR links in Slack. Review progress then happens in GitHub, lea
   - `closed` → `wastebasket`
 - Display number for custom art is `slot_index + 1` (PR #1 … #9). Custom workspace emojis may follow `prmoji-{action}-{N}`.
 - Action `review_dismissed` **removes** reactions instead of adding one. It clears both the `approved` and the `changes_requested` emoji for the slot, because GitHub does not report the dismissed review's original state. A reaction that is not present is a no-op.
+- Action `reopened` **removes** the `closed` emoji for the slot.
 
 ### FR4 — Reaction suppression rules (anti-noise)
 For action `commented`, PRmoji must **not** add reactions when:
@@ -87,7 +90,8 @@ For action `commented`, PRmoji must **not** add reactions when:
 
 ### FR5 — Storage lifecycle
 - When reacting to a PR event, the system must fetch all stored Slack messages for `pr_url`.
-- For actions `merged` and `closed`, after processing reactions, the system must delete all stored entries for that `pr_url`.
+- For action `merged`, after processing reactions, the system must delete all stored entries for that `pr_url`.
+- For action `closed`, entries remain, so a later `reopened` can remove the `closed` emoji.
 - For other actions, entries remain.
 - The service should run a cleanup job to delete entries older than 3 months (configurable).
 
@@ -149,7 +153,7 @@ SQLite table: `pr_messages`
 - **Observability**:
   - Configurable log levels.
 - **Data retention**:
-  - Entries deleted on merge/close.
+  - Entries deleted on merge; closed PRs keep entries until periodic cleanup.
   - Periodic cleanup supports deletion of rows older than 90 days (configurable by code call).
 
 ## Acceptance criteria (black-box)
@@ -160,7 +164,8 @@ SQLite table: `pr_messages`
 - When a review is dismissed, PRmoji removes `:white_check_mark:` and `:no_entry:` from the Slack message(s) and keeps the stored mapping(s).
 - When a GitHub comment event arrives, PRmoji adds `:speech_balloon:` **unless** suppressed by the anti-noise rules.
 - When the PR is merged, PRmoji adds `:pr-merged:` to the Slack message(s) and then deletes the stored mapping(s).
-- When the PR is closed without merging, PRmoji adds `:wastebasket:` and deletes the stored mapping(s).
+- When the PR is closed without merging, PRmoji adds `:wastebasket:` and keeps the stored mapping(s).
+- When a closed PR is reopened, PRmoji removes `:wastebasket:` from the Slack message(s).
 - `POST /cleanup/` deletes entries older than 90 days and returns `OK` on success.
 - `GET /` returns `OK`.
 
