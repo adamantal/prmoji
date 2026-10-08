@@ -173,6 +173,7 @@ For a **single PR** in a Slack message (first link, slot 0):
 - **merged** → `pr-merged` *(custom emoji may be required in your Slack workspace)*
 - **closed (not merged)** → `wastebasket`
 - **review dismissed** → *removes* `white_check_mark` **and** `no_entry`
+- **reopened** → *removes* `wastebasket`
 
 #### Dismissed reviews
 
@@ -181,6 +182,10 @@ When a review is dismissed — by a reviewer, or by branch protection dismissing
 GitHub reports the dismissed review's state as `dismissed`, so the original state is unknown. Both emoji are therefore cleared; Slack answers `no_reaction` for one that is not present, so this is harmless. A later approval re-adds the emoji.
 
 Note: prmoji does not track how many reviewers approved. If two people approve and one approval is dismissed, the emoji is removed even though the other approval stands.
+
+#### Reopened PRs
+
+When a closed PR is reopened, prmoji removes the closed emoji for that PR's slot. To allow this, closing a PR without merging keeps its stored mappings, so later events on that PR still add reactions. Merging still deletes the mappings. Retention cleanup (`RETENTION_DAYS`) removes the rest.
 
 #### Multiple PRs in one message
 

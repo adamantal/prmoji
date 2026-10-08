@@ -129,6 +129,16 @@ func TestEmojisToRemove_DismissalClearsBothReviewEmojis(t *testing.T) {
 	}
 }
 
+func TestEmojisToRemove_ReopenClearsClosedEmoji(t *testing.T) {
+	p := DefaultEmojiPools()
+	for slot := 0; slot < MaxPRsPerMessage; slot++ {
+		got := p.EmojisToRemove(github.ActionReopened, slot)
+		if len(got) != 1 || got[0] != p.Closed[slot] {
+			t.Fatalf("slot %d: expected [%q] got %v", slot, p.Closed[slot], got)
+		}
+	}
+}
+
 func TestEmojisToRemove_NilForAddActions(t *testing.T) {
 	p := DefaultEmojiPools()
 	for _, a := range []github.Action{github.ActionCommented, github.ActionApproved, github.ActionChangesRequested, github.ActionMerged, github.ActionClosed} {

@@ -174,7 +174,8 @@ func (h *Handlers) processGitHubEvent(eventType string, body []byte) {
 		}
 	}
 
-	if class.Action == github.ActionMerged || class.Action == github.ActionClosed {
+	// Closed PRs keep their mappings so a reopen can remove the closed emoji; retention cleanup drops them later.
+	if class.Action == github.ActionMerged {
 		if err := h.Store.DeleteByPRURL(ctx, class.PRURL); err != nil {
 			h.Log.Error("delete mappings failed", "err", err, "pr_url", class.PRURL)
 		}

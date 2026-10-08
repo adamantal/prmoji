@@ -14,11 +14,13 @@ const (
 	ActionClosed           Action = "closed"
 	// ActionReviewDismissed covers both manual and stale-review dismissal.
 	ActionReviewDismissed Action = "review_dismissed"
+	// ActionReopened is a closed (not merged) PR that was reopened.
+	ActionReopened Action = "reopened"
 )
 
 // RemovesReaction reports whether the action should remove reactions instead of adding one.
 func (a Action) RemovesReaction() bool {
-	return a == ActionReviewDismissed
+	return a == ActionReviewDismissed || a == ActionReopened
 }
 
 type Classification struct {
